@@ -3,11 +3,13 @@ from tkinter import scrolledtext
 
 root = tk.Tk()
 
+contacts = tk.Listbox(root, width = 20, height = 23)
 output = scrolledtext.ScrolledText(root, width = 40, height = 20)
 entry = tk.Entry(root, width = 40)
 
-output.grid(row = 0, column = 0)
-entry.grid(row = 1, column = 0)
+contacts.grid(rowspan= 2, column=0)
+output.grid(row = 0, column = 1)
+entry.grid(row = 1, column = 1)
 
 def send(event):
     output.configure(state = tk.NORMAL)
