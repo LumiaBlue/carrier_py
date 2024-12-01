@@ -25,5 +25,4 @@ def send(event):
 entry.bind('<Return>', send)
 output.configure(state = tk.DISABLED)
 
-#tk.title("Carrier")
 tk.mainloop()
