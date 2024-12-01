@@ -22,7 +22,9 @@ class Application(tk.Frame):
         contact_frame.rowconfigure(0, weight=1)
         contact_frame.columnconfigure(0, weight=1)
         contact_frame.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
+        
         self.contacts.grid(row=1, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
+        self.contacts.pack(fill=tk.BOTH, expand=True)
 
         message_frame = tk.Frame(self)
         message_frame.grid(row=0, column=1, sticky=tk.N+tk.S+tk.E+tk.W)
@@ -32,23 +34,27 @@ class Application(tk.Frame):
         self.create_io(message_frame)
 
     def create_io(self, parent):
-        self.chat_label = tk.Label(parent, text="No Active Chat", width=45, anchor=tk.W)
-        self.output = scrolledtext.ScrolledText(parent, width = 40, height = 20)
-        self.entry = tk.Entry(parent, width = 40)
+        self.chatter = tk.StringVar(value="No Active Chat")
+        chat_label = tk.Label(parent, textvariable=self.chatter, width=45, anchor=tk.W, padx=5)
 
-        self.chat_label.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
+        self.output = scrolledtext.ScrolledText(parent, width = 40, height = 20)
+        
+        self.input = tk.StringVar()
+        entry = tk.Entry(parent, width = 40, textvariable=self.input)
+
+        chat_label.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
         self.output.grid(row=1, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
-        self.entry.grid(row=2, column=0, padx=4, pady=5, sticky=tk.N+tk.S+tk.E+tk.W)
+        entry.grid(row=2, column=0, padx=4, pady=5, sticky=tk.N+tk.S+tk.E+tk.W)
 
         self.output.tag_config("m")
         self.output.tag_config("i", foreground="blue")
         self.output.tag_config("o", foreground="red")
 
         def send(event):
-            self.append(self.entry.get())
-            self.entry.delete(0, tk.END)
+            self.append(self.input.get())
+            self.input.set("")
 
-        self.entry.bind('<Return>', send)
+        entry.bind('<Return>', send)
         self.output.configure(state = tk.DISABLED)
 
     def append(self, text, sender=None):
@@ -72,9 +78,10 @@ class Application(tk.Frame):
 
     def update_chat(self, self_id, target_name, messages):
         # Clear current chat from output
+        self.chatter.set(target_name)
         self.output.configure(state=tk.NORMAL)
         self.output.delete(0, tk.END)
-        self.entry.delete(0, tk.END)
+        self.input.set("")
 
         for message in messages:
             if message[0] != self_id:
