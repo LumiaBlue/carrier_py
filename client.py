@@ -1,6 +1,6 @@
 import asyncio
 
-class client:
+class Client:
     async def __init__(self, reader, writer):
         self.uuid = -1
         self.reader = reader

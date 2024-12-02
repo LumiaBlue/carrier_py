@@ -1,7 +1,7 @@
 import asyncio
-import client
+import Client
 
-class server:
+class Server:
     async def __init__(self, host, port):
         self.server = await asyncio.start_server(self.connection, host, port)
         self.unlogged = []
@@ -11,7 +11,7 @@ class server:
             await self.server.serve_forever()
 
     def connection(self, reader, writer):
-        self.unlogged.append(client(reader, writer))
+        self.unlogged.append(Client(reader, writer))
 
         self.receive(self.unlogged[-1])
 
