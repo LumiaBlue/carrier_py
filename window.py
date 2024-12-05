@@ -1,11 +1,22 @@
 import tkinter as tk
 from tkinter import scrolledtext
+import asyncio
 
 class Window(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
         self.grid(sticky=tk.N+tk.S+tk.E+tk.W)
         self.create_widgets()
+    
+    @asyncio.coroutine
+    def run_tk(root, interval=0.05):
+        try:
+            while True:
+                root.update()
+                yield from asyncio.sleep(interval)
+        except tk.TclError as e:
+            if "application has been destroyed" not in e.args[0]:
+                raise
 
     def create_widgets(self):
         top = self.winfo_toplevel()
@@ -90,7 +101,3 @@ class Window(tk.Frame):
                 self.append_light(message[2])
 
         self.output.configure(state=tk.DISABLED)
-
-win = Window()
-win.master.title("Carrier")
-win.mainloop()
