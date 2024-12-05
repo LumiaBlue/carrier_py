@@ -4,6 +4,8 @@ import Sock
 config = open("config.txt")
 HOST = config.readline().split()[1]
 PORT = config.readline().split()[1]
+USER = config.readline().split()[1]
+PASSW = config.readline().split()[1]
 config.close()
 
 class Client:
@@ -12,6 +14,9 @@ class Client:
 
         self.sock = Sock(reader, writer)
         self.color = "blue"
+
+        asyncio.create_task(await self.send(f"$log {USER} {PASSW}"))
+        asyncio.create_task(await self.receive())
 
     async def send(self, message):
         await self.sock.send(message)
@@ -52,3 +57,4 @@ class Client:
         elif mtype == "$" and code == "exit":
             self.sock.__del__()
         
+        asyncio.create_task(await self.receive())
