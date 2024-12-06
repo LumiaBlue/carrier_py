@@ -76,8 +76,6 @@ class Client:
         elif mtype == "$" and code == "chat":
             splits = message.split(", ", 3)
 
-            print(splits)
-
             s_id = int(splits[0][1:])
             r_id = int(splits[1])
 
