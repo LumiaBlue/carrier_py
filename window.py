@@ -38,12 +38,13 @@ class Window(tk.Frame):
             asyncio.create_task(self.sock.send(f"$chat {self.chatter.get()}"))
     
     def send(self, event):
+        if self.input.get() != "":
             self.append(self.input.get())
             
             if self.chatter.get() in self.users:
                 asyncio.create_task(self.sock.send(f"u{self.users[self.chatter.get()]} {self.input.get()}"))
 
-            self.input.set("")
+        self.input.set("")
 
     async def run_tk(root, interval=0.05):
         try:
@@ -117,7 +118,8 @@ class Window(tk.Frame):
         self.output.configure(state = tk.DISABLED)
     
     def append_message(self, text, sender_id):
-        if self.users[self.chatter.get()] == sender_id:
+        print(f"'text'")
+        if self.users[self.chatter.get()] == sender_id and text != "":
             self.append(text, self.chatter.get())
 
     def append_light(self, text, sender=None):

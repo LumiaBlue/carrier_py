@@ -1,4 +1,4 @@
 Host: 65.183.131.25
 Port: 25565
-User: lumiablue
+User: Lenovo
 passw: pass
