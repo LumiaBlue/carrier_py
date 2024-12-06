@@ -42,7 +42,7 @@ class Server:
     async def sendall(self, sock, messages):
         for message in messages:
             await sock.send(f"$chat {message}")
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.1)
 
     async def receive(self, sock):
         received = await sock.receive()
@@ -65,7 +65,7 @@ class Server:
         # Respond to messages
         if mtype == "u" and message:
             if self.socks[int(code)]:
-                asyncio.create_task(self.send(self.socks[int(code)], f"$m {sock.id}" + message))
+                asyncio.create_task(self.send(self.socks[int(code)], f"m {sock.id} {message}"))
 
             cur.execute(f"INSERT INTO MESSAGES VALUES (?,?,?,?)", (sock.id, code, time.time(), message,))
             conn.commit()
