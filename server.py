@@ -65,9 +65,7 @@ class Server:
         # Respond to messages
         if mtype == "u" and message:
             if self.socks[int(code)]:
-                asyncio.create_task(self.send(self.socks[code], f"$m {sock.id}" + message))
-
-            
+                asyncio.create_task(self.send(self.socks[int(code)], f"$m {sock.id}" + message))
 
             cur.execute(f"INSERT INTO MESSAGES VALUES (?,?,?,?)", (sock.id, code, time.time(), message,))
             conn.commit()

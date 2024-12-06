@@ -52,7 +52,12 @@ class Client:
             message = received[i+1:]
         
         if mtype == "m" and message:
-            sender = message.split()[0]
+            i = message.find(" ")
+
+            s_id = int(message[0:i])
+            text = message[i+1:]
+
+            win.append_message(text, s_id)
 
         elif mtype == "a":
             accounts = message.split(",")[:-1]
@@ -70,7 +75,7 @@ class Client:
 
         elif mtype == "$" and code == "chat":
             splits = message.split(", ", 5)
-            
+
             s_id = int(splits[0][1:])
             r_id = int(splits[1])
 
@@ -79,7 +84,7 @@ class Client:
             if s_id == self.sock.id:
                 win.append(text)
             else:
-                win.append(text, s_id)
+                win.append_message(text, s_id)
         elif mtype == "$" and code == "log":
             if message[0] == "F":
                 print("logon failed")

@@ -115,6 +115,10 @@ class Window(tk.Frame):
         
         self.output.insert(tk.END, text + "\n", "m")
         self.output.configure(state = tk.DISABLED)
+    
+    def append_message(self, text, sender_id):
+        if self.users[self.chatter.get()] == sender_id:
+            self.append(text, self.chatter.get())
 
     def append_light(self, text, sender=None):
         if not sender:
