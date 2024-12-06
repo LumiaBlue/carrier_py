@@ -7,11 +7,18 @@ import Sock
 conn = sqlite3.connect("carrier.db")
 cur = conn.cursor()
 
+config = open("config.txt")
+HOST = config.readline().split()[1]
+PORT = config.readline().split()[1]
+config.close()
+
 class Server:
-    async def __init__(self, host, port):
-        self.server = await asyncio.start_server(self.connection, host, port)
+    def __init__(self):
         self.unlogged = []
         self.socks = []
+
+    async def establish(self, host, port):
+        self.server = await asyncio.start_server(self.connection, host, port)
 
         async with self.server:
             await self.server.serve_forever()
@@ -100,3 +107,10 @@ class Server:
     
     def get_socks(self, index):
         return self.socks[index]
+
+async def main():
+    server = Server()
+
+    await server.establish(HOST, PORT)
+
+asyncio.run(main())
