@@ -1,4 +1,5 @@
 import asyncio
+from tkinter import StringVar
 
 from Sock import Sock
 from Window import Window
@@ -13,6 +14,10 @@ config.close()
 win = Window()
 win.master.title("Carrier")
 
+users = {}
+listbox_opts = StringVar(value="test")
+win.create_widgets(listbox_opts)
+
 class Client:
     def __init__(self):
         self.sock = None
@@ -24,14 +29,19 @@ class Client:
         reader, writer = await asyncio.open_connection(HOST, PORT)
 
         self.sock = Sock(reader, writer)
-        asyncio.create_task(await self.send(f"$log {USER} {PASSW}"))
-        asyncio.create_task(await self.receive())
+        asyncio.create_task(self.send(f"$log {USER} {PASSW}"))
+        asyncio.create_task(self.send(f"a {USER}"))
+        asyncio.create_task(self.receive())
 
     async def send(self, message):
         await self.sock.send(message)
 
     async def receive(self):
         received = await self.sock.receive()
+
+        if not received:
+            return
+        asyncio.create_task(self.receive())
 
         i = received.find(" ")
 
@@ -44,36 +54,49 @@ class Client:
         if mtype == "m" and message:
             sender = message.split()[0]
 
+        elif mtype == "a":
+            accounts = message.split(",")[:-1]
+
+            names = ""
+            for account in accounts:
+                uname = account.split()[0]
+                uid = int(account.split()[1])
+
+                users[uname] = uid
+                names = names + " " + uname
+            
+            win.set_users(users)
+            listbox_opts.set(names)
+
         elif mtype == "$" and code == "chat":
-            splits = message.split(" ", 5)
+            splits = message.split(", ", 5)
+            
+            s_id = int(splits[0][1:])
+            r_id = int(splits[1])
 
-            name = splits[0]
+            text = splits[3][1:-2]
 
-            sender = splits[1]
-            recip = splits[2]
-
-            if sender == self.sock.id:
-                win.append(message[-1])
+            if s_id == self.sock.id:
+                win.append(text)
             else:
-                win.append(message[-1], name)
+                win.append(text, s_id)
         elif mtype == "$" and code == "log":
             if message[0] == "F":
                 print("logon failed")
                 exit()
             else:
-                self.sock.id = message.split()[0]
+                self.sock.id = int(message.split()[0])
                 self.color = message.split()[1]
 
         elif mtype == "$" and code == "exit":
             self.sock.__del__()
-        
-        asyncio.create_task(await self.receive())
 
 async def main():
     client = Client()
+    await client.establish()
 
-    asyncio.create_task(client.establish())
     win_task = asyncio.create_task(win.run_tk())
+    win.set_sock(client.sock)
 
     await win_task
 

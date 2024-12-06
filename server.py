@@ -2,20 +2,21 @@ import sqlite3
 import asyncio
 import time
 
-import Sock
+from Sock import Sock
 
 conn = sqlite3.connect("carrier.db")
 cur = conn.cursor()
 
-config = open("config.txt")
+config = open("server_config.txt")
 HOST = config.readline().split()[1]
 PORT = config.readline().split()[1]
 config.close()
 
 class Server:
     def __init__(self):
+        num_accs = cur.execute("SELECT count(*) FROM Users").fetchone()
         self.unlogged = []
-        self.socks = []
+        self.socks = [None] * (num_accs[0] + 1)
 
     async def establish(self, host, port):
         self.server = await asyncio.start_server(self.connection, host, port)
@@ -38,14 +39,17 @@ class Server:
     async def send(self, sock, message):
         await sock.send(message)
 
-    async def sendall(self, sock, id, messages):
+    async def sendall(self, sock, messages):
         for message in messages:
-            await sock.send(f"$chat {id} {message}")
-        
-        await sock.send("$end")
+            await sock.send(f"$chat {message}")
+            await asyncio.sleep(0.05)
 
     async def receive(self, sock):
         received = await sock.receive()
+        if not received:
+            return
+
+        asyncio.create_task(self.receive(sock))
 
         # Find index of first spacce
         i = received.find(" ")
@@ -60,20 +64,36 @@ class Server:
 
         # Respond to messages
         if mtype == "u" and message:
-            asyncio.create_task(self.send(self.socks[code], f"$m {sock.id}" + message))
+            if self.socks[int(code)]:
+                asyncio.create_task(self.send(self.socks[code], f"$m {sock.id}" + message))
 
-            cur.execute(f"INSERT INTO MESSAGES VALUES (?,?,?,?)", (sock.uuid, code, message, time.time(),))
+            
+
+            cur.execute(f"INSERT INTO MESSAGES VALUES (?,?,?,?)", (sock.id, code, time.time(), message,))
             conn.commit()
+        elif mtype == "a":
+            accounts = cur.execute("SELECT uname, uid FROM Users WHERE uname != (?)", (message,)).fetchall()
+
+            response = "a "
+            for account in accounts:
+                response = response + account[0] + " "  + str(account[1]) + ","
+            
+            asyncio.create_task(self.send(sock, response))
         elif mtype == "$" and code == "chat":
             # message of form:
-            # u_id timestamp
+            # uname
             options = message.split()
 
             # sqlite chats between sock.id & options[0]
-            r_id = cur.execute(f"SELECT * FROM Users WHERE uname == {options[0]} LIMIT 1").fetchone()
-            messages = cur.execute(f"SELECT * FROM Messages WHERE s_id == {sock.id} and r_id == {r_id[0]} ORDER BY time ASC").fetchall()
-            # collect messages with timestamp > options[1]
-            asyncio.create_task(self.sendall(sock, messages))
+            r_id = cur.execute("SELECT * FROM Users WHERE uname == (?) LIMIT 1", (options[0],)).fetchone()
+            messages = cur.execute('''SELECT * FROM (SELECT * FROM 
+                                   (SELECT * FROM Messages WHERE s_id == (?) AND r_id == (?) 
+                                   UNION 
+                                   SELECT * FROM Messages WHERE r_id == (?) AND s_id == (?)) 
+                                   ORDER BY timestamp DESC LIMIT 5) ORDER BY timestamp ASC''', (sock.id, r_id[0], sock.id, r_id[0],)).fetchall()
+            
+            if messages:
+                asyncio.create_task(self.sendall(sock, messages))
             
         elif mtype == "$" and code == "log":
             # message of form:
@@ -81,7 +101,7 @@ class Server:
             options = message.split()
 
             # sqlite find account with user & pass
-            account = cur.execute(f"SELECT * FROM Users WHERE uname == {options[0]} AND pass == {options[1]}")
+            account = cur.execute("SELECT * FROM Users WHERE uname == (?) AND pass == (?)", (options[0], options[1],)).fetchone()
 
             if account:
                 # Remove sock from unlogged list
@@ -99,8 +119,6 @@ class Server:
                 asyncio.create_task(self.send(sock, f"$log F")) 
         elif mtype == "$" and code == "exit":
             sock.__del__()
-        
-        asyncio.create_task(self.receive(self, sock))
 
     def get_socks(self):
         return self.socks

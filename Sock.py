@@ -1,8 +1,8 @@
 import asyncio
 
 class Sock:
-    async def __init__(self, reader, writer):
-        self.uuid = -1
+    def __init__(self, reader, writer):
+        self.id = -1
         self.reader = reader
         self.writer = writer
     
