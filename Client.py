@@ -74,7 +74,9 @@ class Client:
             listbox_opts.set(names)
 
         elif mtype == "$" and code == "chat":
-            splits = message.split(", ", 5)
+            splits = message.split(", ", 3)
+
+            print(splits)
 
             s_id = int(splits[0][1:])
             r_id = int(splits[1])
